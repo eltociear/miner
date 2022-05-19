@@ -378,7 +378,6 @@ export_ledger(MasterKeyB58, OutputFile) ->
                     fun({Address, Entry}, Acc) ->
                         case blockchain_ledger_entry_v1:balance(Entry) of
                             0 -> Acc;
-                            undefined -> Acc;
                             Balance -> [blockchain_txn_coinbase_v1:new(Address, Balance) | Acc]
                         end
                     end, [], Accounts),
@@ -391,7 +390,6 @@ export_ledger(MasterKeyB58, OutputFile) ->
                     fun({Address, Entry}, Acc) ->
                         case blockchain_ledger_data_credits_entry_v1:balance(Entry) of
                             0 -> Acc;
-                            undefined -> Acc;
                             Balance -> [blockchain_txn_dc_coinbase_v1:new(Address, Balance) | Acc]
                         end
                     end, [], DCAccounts),
@@ -403,7 +401,6 @@ export_ledger(MasterKeyB58, OutputFile) ->
                     fun({Address, Entry}, Acc) ->
                         case blockchain_ledger_security_entry_v1:balance(Entry) of
                             0 -> Acc;
-                            undefined -> Acc;
                             Balance -> [blockchain_txn_security_coinbase_v1:new(Address, Balance) | Acc]
                         end
                     end, [], SecurityAccounts),
@@ -435,7 +432,6 @@ export_ledger(MasterKeyB58, OutputFile) ->
                     fun({GWAddr, GW}, Acc) ->
                         GWOwnerAddr = blockchain_ledger_gateway_v2:owner_address(GW),
                         case blockchain_ledger_gateway_v2:location(GW) of
-                            [] -> Acc;
                             undefined -> Acc;
                             GWLoc ->
                                 GWNonce = blockchain_ledger_gateway_v2:nonce(GW),
@@ -448,7 +444,6 @@ export_ledger(MasterKeyB58, OutputFile) ->
             OracleTxn =
                 case Price of
                     0 -> [];
-                    undefined -> [];
                     _ -> blockchain_txn_gen_price_oracle_v1:new(Price)
                 end,
 

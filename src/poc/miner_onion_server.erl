@@ -491,16 +491,13 @@ tx_power(Region, #state{chain=Chain, compact_key=CK}) ->
             %% set this to false
             ConsiderTxGain = application:get_env(miner, consider_tx_gain, true),
             case blockchain_ledger_gateway_v2:gain(GwInfo) of
-                AssertGain when AssertGain == undefined orelse ConsiderTxGain == false ->
+                AssertGain when ConsiderTxGain == false ->
                     %% No gain on chain or the gain is accounted for in pkt forwarder,
                     %% EIRP = max allowed in region
                     EIRP = trunc(MaxEIRP/10),
                     lager:info("Region: ~p, Gain: ~p, MaxEIRP: ~p, EIRP: ~p",
                                [Region, undefined, MaxEIRP/10, EIRP]),
-                    Gain = case AssertGain of
-                               undefined -> 0;
-                               _ -> trunc(AssertGain/10)
-                           end,
+                    Gain = trunc(AssertGain/10),
                     {ok, EIRP, EIRP, Gain};
                 AssertGain ->
                     %% AssertGain + TxPower cannot be higher than MaxEIRP

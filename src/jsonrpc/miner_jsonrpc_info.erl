@@ -149,11 +149,8 @@ get_gateway_location(_Chain, Gateway, Dest) ->
         L -> h3:to_string(L)
     end,
     GWElevation = blockchain_ledger_gateway_v2:elevation(Gateway),
-    GWGain = case blockchain_ledger_gateway_v2:gain(Gateway) of
-        undefined -> undefined;
-        V -> V / 10
-    end,
-    Dest#{ 
+    GWGain = blockchain_ledger_gateway_v2:gain(Gateway) / 10,
+    Dest#{
         <<"location">> => ?TO_VALUE(GWLoc),
         <<"gain">> => ?TO_VALUE(GWGain),
         <<"elevation">> => ?TO_VALUE(GWElevation)

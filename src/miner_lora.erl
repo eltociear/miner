@@ -153,41 +153,37 @@ location_ok() ->
 reg_domain_data_for_addr(_Addr, #state{chain=undefined}) ->
     {error, no_chain};
 reg_domain_data_for_addr(Addr, #state{chain=Chain}) ->
-    case blockchain:ledger(Chain) of
-        undefined ->
-            {error, no_ledger};
-        Ledger ->
-            case blockchain:config(?poc_version, Ledger) of
-                {ok, V} when V > 10 ->
-                    %% check if the poc 11 vars are active yet
-                    case blockchain_ledger_v1:find_gateway_location(Addr, Ledger) of
-                        {ok, undefined} ->
-                            {error, no_location};
-                        {ok, Location} ->
-                            case blockchain_region_v1:h3_to_region(Location, Ledger) of
-                                {ok, Region} ->
-                                    case blockchain_region_params_v1:for_region(Region, Ledger) of
-                                        {ok, RegionParams} ->
-                                            {ok, {Region, [ (blockchain_region_param_v1:channel_frequency(RP) / ?MHzToHzMultiplier) || RP <- RegionParams ]}};
-                                        {error, Reason} ->
-                                            {error, Reason}
-                                    end;
-                                {error, region_var_not_set} ->
-                                    %% poc-v11 is partially active
-                                    lookup_via_country_code(Addr);
-                                {error, regulatory_regions_not_set} ->
-                                    %% poc-v11 is partially active
-                                    lookup_via_country_code(Addr);
+    Ledger = blockchain:ledger(Chain),
+    case blockchain:config(?poc_version, Ledger) of
+        {ok, V} when V > 10 ->
+            %% check if the poc 11 vars are active yet
+            case blockchain_ledger_v1:find_gateway_location(Addr, Ledger) of
+                {ok, undefined} ->
+                    {error, no_location};
+                {ok, Location} ->
+                    case blockchain_region_v1:h3_to_region(Location, Ledger) of
+                        {ok, Region} ->
+                            case blockchain_region_params_v1:for_region(Region, Ledger) of
+                                {ok, RegionParams} ->
+                                    {ok, {Region, [ (blockchain_region_param_v1:channel_frequency(RP) / ?MHzToHzMultiplier) || RP <- RegionParams ]}};
                                 {error, Reason} ->
                                     {error, Reason}
                             end;
+                        {error, region_var_not_set} ->
+                            %% poc-v11 is partially active
+                            lookup_via_country_code(Addr);
+                        {error, regulatory_regions_not_set} ->
+                            %% poc-v11 is partially active
+                            lookup_via_country_code(Addr);
                         {error, Reason} ->
                             {error, Reason}
                     end;
-                _ ->
-                    %% before poc-v11
-                    lookup_via_country_code(Addr)
-            end
+                {error, Reason} ->
+                    {error, Reason}
+            end;
+        _ ->
+            %% before poc-v11
+            lookup_via_country_code(Addr)
     end.
 
 lookup_via_country_code(Addr) ->
@@ -995,13 +991,7 @@ maybe_update_reg_data(#state{reg_domain_confirmed=true, chain=Chain} = State) wh
                 {error, {not_set, _}} ->
                     %% NOTE: region param vars are not set, default frequency data from app env
                     FreqMap = application:get_env(miner, frequency_data, #{}),
-                    State#state{reg_freq_list=maps:get(Region, FreqMap, undefined)};
-                {error, Reason} ->
-                    lager:error("unable to find params for region: ~p using chain, error: ~p", [
-                        Region, Reason
-                    ]),
-                    %% Some other failure, do nothing
-                    State
+                    State#state{reg_freq_list=maps:get(Region, FreqMap, undefined)}
             end
     end;
 maybe_update_reg_data(#state{pubkey_bin=Addr} = State) ->
